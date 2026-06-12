@@ -1,0 +1,119 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "scriptorium"
+version = "0.0.1"
+description = "Schema-first synthetic scholarly corpus generator: typeset trusted public-domain texts into scholarly PDF layouts, degrade to scan-like images, emit (PDF/image, perfect ground truth) pairs."
+readme = "README.md"
+requires-python = ">=3.11"
+license = { text = "Apache-2.0" }
+authors = [{ name = "Logan Rooks", email = "logan.rooks@mail.utoronto.ca" }]
+keywords = [
+    "ocr",
+    "ground-truth",
+    "synthetic-data",
+    "latex",
+    "scholarly-documents",
+    "document-ai",
+    "corpus-generation",
+]
+classifiers = [
+    "Development Status :: 2 - Pre-Alpha",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: Apache Software License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Scientific/Engineering :: Image Recognition",
+    "Topic :: Text Processing :: Markup :: LaTeX",
+]
+
+# Runtime dependencies. Kept minimal: rendering needs only the template engine.
+# Pillow is used for raster page-image degradation; augraphy is *planned* (see docs/design.md)
+# but not yet wired, so it is not pinned here.
+dependencies = [
+    "jinja2>=3.1",
+    "pillow>=10.0",
+]
+
+[project.optional-dependencies]
+# The schema package is being built IN PARALLEL at github.com/loganrooks/scholar-schema.
+# It does not exist yet, so it is OPTIONAL and all imports of it are lazy (see
+# scriptorium.schema_bridge -- the package is fully usable without it).
+#
+# The git-URL dependency is declared below but COMMENTED OUT so that `uv sync` /
+# `uv lock` succeed today (resolving the extra would fail: "Repository not found").
+#
+# TODO(scholar-schema): once github.com/loganrooks/scholar-schema is published,
+#   1. uncomment the `scholar-schema @ git+...` line below (and pin a tag),
+#   2. then `uv sync --extra schema`,
+#   3. and flip scriptorium.schema_bridge to strict validation by default.
+schema = [
+    # "scholar-schema @ git+https://github.com/loganrooks/scholar-schema.git@v0.1.0",
+]
+dev = [
+    "ruff>=0.6",
+    "mypy>=1.11",
+    "pytest>=8.0",
+    "pypdf>=4.0",
+]
+
+[project.urls]
+Homepage = "https://github.com/loganrooks/scriptorium"
+Repository = "https://github.com/loganrooks/scriptorium"
+
+[project.scripts]
+scriptorium = "scriptorium.cli:main"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/scriptorium"]
+# Templates (.tex.j2) and py.typed live inside the package dir and are bundled in the wheel.
+artifacts = ["src/scriptorium/templates/*.j2", "src/scriptorium/py.typed"]
+
+[tool.uv]
+# dev tooling is also exposed as a dependency group for `uv sync`
+default-groups = []
+
+[dependency-groups]
+dev = [
+    "ruff>=0.6",
+    "mypy>=1.11",
+    "pytest>=8.0",
+    "pypdf>=4.0",   # test-only: robust PDF page-count assertion in the end-to-end test
+]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+src = ["src", "tests"]
+
+[tool.ruff.lint]
+select = [
+    "E",   # pycodestyle errors
+    "F",   # pyflakes
+    "I",   # isort
+    "UP",  # pyupgrade
+    "B",   # flake8-bugbear
+    "SIM", # flake8-simplify
+    "RUF", # ruff-specific
+]
+
+[tool.mypy]
+python_version = "3.11"
+strict = true
+warn_unused_configs = true
+files = ["src", "tests"]
+# The optional schema package is not installed in the default env; ignore its
+# missing import so mypy stays green before scholar-schema exists.
+[[tool.mypy.overrides]]
+module = ["scholar_schema.*", "scholargt.*", "augraphy.*"]
+ignore_missing_imports = true
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-ra"
+markers = [
+    "tectonic: end-to-end test that requires the tectonic LaTeX engine (auto-skips if absent)",
+]
