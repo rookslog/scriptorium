@@ -1,0 +1,78 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  lint-type-test:
+    name: ruff · mypy · pytest
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+
+      - name: Install dependencies
+        run: uv sync --group dev
+
+      - name: Ruff lint
+        run: uv run ruff check .
+
+      - name: Ruff format check
+        run: uv run ruff format --check .
+
+      - name: Mypy
+        run: uv run mypy
+
+      - name: Pytest
+        # tectonic is not provisioned on GitHub-hosted runners yet, so the end-to-end
+        # render test auto-skips (it is marked `tectonic` and skipif-guarded on the engine).
+        run: uv run pytest
+
+  no-binary-blobs:
+    name: guard · no PDFs or large files
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Reject committed PDFs and files larger than 1 MB
+        run: |
+          set -euo pipefail
+          status=0
+
+          # Rendered PDFs are build artifacts and must never be committed.
+          pdfs=$(git ls-files '*.pdf' '*.PDF' || true)
+          if [ -n "$pdfs" ]; then
+            echo "::error::Committed PDF files found (rendered outputs must be gitignored):"
+            echo "$pdfs"
+            status=1
+          fi
+
+          # Reject any tracked file larger than 1 MB (1048576 bytes).
+          limit=1048576
+          while IFS= read -r f; do
+            [ -f "$f" ] || continue
+            size=$(wc -c < "$f")
+            if [ "$size" -gt "$limit" ]; then
+              echo "::error::$f is ${size} bytes (> 1 MB limit). Build artifacts must be gitignored."
+              status=1
+            fi
+          done < <(git ls-files)
+
+          if [ "$status" -ne 0 ]; then
+            echo "Guard failed: remove the offending files and rely on .gitignore."
+            exit 1
+          fi
+          echo "Guard passed: no committed PDFs and no tracked file exceeds 1 MB."
