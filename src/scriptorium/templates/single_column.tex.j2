@@ -1,0 +1,34 @@
+%# scriptorium milestone-1 template: single column + one footnote.
+%#
+%# Schema-first: this template is the renderer for `text_block` regions and `note`
+%# (footnote) semantics. Body text comes from PageGT regions in reading order; the first
+%# footnote is anchored to the end of the first body block via \footnote, which keeps the
+%# in-text marker and the note content paired exactly for ground truth.
+%#
+%# Jinja2 delimiters are LaTeX-safe: \VAR{...} for variables, \BLOCK{...} for control.
+\documentclass[11pt]{article}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage[a4paper,margin=1in]{geometry}
+\usepackage{microtype}
+\pagestyle{plain}
+
+\begin{document}
+
+\BLOCK{ if title }
+\begin{center}
+{\Large \VAR{ title | latex }}\\[0.3em]
+\BLOCK{ if author }{\large \VAR{ author | latex }}\BLOCK{ endif }
+\end{center}
+\vspace{1em}
+\BLOCK{ endif }
+
+\BLOCK{ for region in body_regions }
+\VAR{ region.text | latex }%
+\BLOCK{ if loop.first and notes }
+\footnote{\VAR{ notes[0].text | latex }}%
+\BLOCK{ endif }
+
+\BLOCK{ endfor }
+
+\end{document}
