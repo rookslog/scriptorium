@@ -1,0 +1,41 @@
+# Rendered outputs are build artifacts, never committed (CI guard enforces this).
+*.pdf
+out/
+output/
+build/
+dist/
+*.aux
+*.log
+*.synctex.gz
+
+# Page-image rasters and corpus blobs
+*.png
+*.jpg
+*.jpeg
+*.tiff
+*.tif
+corpus/
+renders/
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.eggs/
+.venv/
+venv/
+.mypy_cache/
+.ruff_cache/
+.pytest_cache/
+.coverage
+htmlcov/
+
+# uv
+# (uv.lock IS committed once the schema git dep is uncommented; until then it pins only
+#  the resolvable deps and is safe to track.)
+
+# OS / editor
+.DS_Store
+*.swp
+.idea/
+.vscode/
