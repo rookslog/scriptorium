@@ -34,6 +34,13 @@ htmlcov/
 # (uv.lock IS committed once the schema git dep is uncommented; until then it pins only
 #  the resolvable deps and is safe to track.)
 
+# Code-intelligence tooling (local state; not repo content)
+.codebase-memory/
+.serena/
+
+# Private planning artifacts — their own nested git repo; never enters the public repo
+goal/
+
 # OS / editor
 .DS_Store
 *.swp

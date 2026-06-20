@@ -1,8 +1,8 @@
 """Degradation specification: the second half of the input language.
 
 A :class:`DegradationSpec` is a severity-parameterized description of how a clean rendered
-page is degraded toward a scan-like image. The plan (PLAN.md Sec 5, GT-A) names augraphy as
-the eventual scan-simulation backend; it is **planned, not yet integrated**. Until then the
+page is degraded toward a scan-like image. augraphy (see ``docs/design.md`` §1.2) is the
+eventual scan-simulation backend; it is **planned, not yet integrated**. Until then the
 spec is the stable contract and only a small Pillow-based reference implementation of a few
 effects exists (see :func:`apply` -- intentionally a no-op stub for the walking skeleton).
 
@@ -24,7 +24,7 @@ class DegradationSpec:
     effect within that envelope. ``severity == 0.0`` means "leave the clean render
     untouched" (the walking-skeleton default).
 
-    Fields map to the PLAN.md Sec 5 augraphy effect families:
+    Fields map to augraphy effect families (see ``docs/design.md`` §1.2):
         skew:          page rotation (degrees at severity 1.0).
         noise:         additive sensor/paper noise magnitude.
         bleed_through: ghost of the verso showing through the page.
@@ -63,7 +63,7 @@ class DegradationSpec:
         """Build a spec where every effect is driven by a single severity dial.
 
         A convenience for sweeps where difficulty is a single controlled variable
-        (PLAN.md Sec 5: "difficulty as a controlled variable"). Per-effect magnitudes are
+        (see ``docs/design.md`` §1.2). Per-effect magnitudes are
         set to ``severity`` and JPEG quality is interpolated from 95 (clean) down to 35.
         """
         if not 0.0 <= severity <= 1.0:

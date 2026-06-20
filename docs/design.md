@@ -55,7 +55,7 @@ the bridge to strict-by-default and drop the structural fallback.
 ### 1.2 The degradation half: DegradationSpec
 
 A [`DegradationSpec`](../src/scriptorium/degradation.py) is **severity-parameterized** so
-that scan difficulty is a single controlled experimental variable (PLAN.md §5). Fields map to
+that scan difficulty is a single controlled experimental variable. Fields map to
 augraphy effect families:
 
 | Field | Effect | Range |
@@ -102,9 +102,9 @@ augraphy integration and a PDF-geometry pass.
 
 Templates are ordered by how much of the schema they force into a renderer. Each milestone is
 a `(LayoutRegister/SemanticElement) -> LaTeX` mapping. The hard cases are not deferred
-decoration; they are **the reason scriptorium exists** — PLAN.md §5 names them as "the cases
-the schema claims to express and no public benchmark tests" (every public OCR benchmark
-excludes footnotes, floating elements, non-English text, and critical apparatus).
+decoration; they are **the reason scriptorium exists**: the cases the schema claims to express
+that no public benchmark tests (every public OCR benchmark excludes footnotes, floating
+elements, non-English text, and critical apparatus).
 
 ### Milestone 1 — single column + footnotes  ✅ *(walking skeleton, shipped)*
 
@@ -172,6 +172,6 @@ schema test. An element scriptorium cannot render is an element whose meaning is
 underspecified, surfacing the gap before any extractor depends on it. This is the
 pilot-annotation the scholardoc audit asked for, executed mechanically.
 
-One independence constraint (PLAN.md §11.1): scriptorium is a standalone repo, never merged
+One independence constraint (see [`README.md`](../README.md) "Context"): scriptorium is a standalone repo, never merged
 into the OCR pipeline. The GT source must not cohabit with the system it evaluates, or the
 evaluation checkers drift toward generator quirks (Goodhart).
