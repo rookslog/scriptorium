@@ -84,17 +84,42 @@ non-clean spec raises `NotImplementedError` rather than faking scanner physics.
 ```
 output  =  rendered PDF
         +  page images (one raster per page; degraded per the DegradationSpec)
-        +  GT JSON, echoed with render-time additions (notably pixel-space bboxes)
+        +  GT JSON, schema-conformant and unmodified in coordinate space (normalized bboxes)
+        +  render manifest (sidecar): everything only the renderer knows
 ```
 
-The emitted GT is the *input* GT plus what only the renderer knows: the exact pixel/PDF-space
-bounding box each region landed in, the rasterization DPI, and the degradation parameters
-actually applied (echoed from the spec). This closes the loop — the (image, GT) pair is
-aligned because the same process produced both.
+The GT stays strictly `scholar-schema`-conformant — bboxes remain normalized `[0,1]`, as the
+schema's `BBox` validators require. Everything the renderer alone knows travels in a
+**versioned sidecar render manifest**, never grafted onto the GT: pixel-space geometry is
+*derived* (`px = normalized × page dimensions from the manifest`), so no consumer ever needs
+a schema the schema repo doesn't publish. This closes the loop — the `(image, GT, manifest)`
+triple is aligned because the same process produced all three — without forking the contract.
+
+### 2.1 Render-manifest contract (v1, draft)
+
+One `manifest.json` per batch run; one entry per page. Required fields:
+
+| Field | Contents |
+|---|---|
+| `manifest_version` | this contract's version (semver) |
+| `generator_commit` | scriptorium git SHA that produced the run |
+| `schema_version` / `schema_pin` | `scholar-schema` version + exact pin used for validation |
+| `template_id`, `template_version` | which renderer produced the page |
+| `source_text` | source-work identifier + license/provenance tag (public-domain rule) |
+| `degradation` | severity, seed, backend + version, ordered op list *actually applied* |
+| `stratum` | the difficulty band (see the strata definition in the engine packet) |
+| `image` | path, format, DPI, `width_px`, `height_px`, sha256 |
+| `page_gt` | path, sha256 |
+
+A page is reproducible from its manifest entry alone (same commit + template + source +
+seed ⇒ byte-identical output); a third-party tool can consume `(image, GT, manifest)`
+without pinning any other repo in the programme. This is the appropriability contract:
+corpus *packs* (curated bundles of templates × sources × strata for a given purpose) are
+defined over these triples, not over ad-hoc folders.
 
 The walking skeleton (milestone 1) emits the PDF and echoes the validated GT
-(`RenderResult.gt`); raster page-image emission and render-time bbox extraction land with the
-augraphy integration and a PDF-geometry pass.
+(`RenderResult.gt`); raster page-image emission, the manifest, and the render-geometry
+alignment pass land with the augraphy integration.
 
 ---
 
