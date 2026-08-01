@@ -108,12 +108,19 @@ One `manifest.json` per batch run; one entry per page. Required fields:
 | `source_text` | source-work identifier + license/provenance tag (public-domain rule) |
 | `degradation` | severity, seed, backend + version, ordered op list *actually applied* |
 | `stratum` | the difficulty band (see the strata definition in the engine packet) |
+| `toolchain` | TeX engine + version (e.g. tectonic x.y.z), bundle identity/hash, fonts used — byte-identical reproduction is a toolchain property, not just a seed property |
 | `image` | path, format, DPI, `width_px`, `height_px`, sha256 |
 | `page_gt` | path, sha256 |
+| `document_gt` | path, sha256 (when the page belongs to a `DocumentGT` — required for pages exercising document-level semantics: notes, registers, sous rature) |
+
+**Normative form:** this table is the prose mirror of
+[`schemas/render_manifest.schema.json`](../schemas/render_manifest.schema.json) (JSON
+Schema; lands with the geometry-emission milestone). Where the two disagree, the JSON
+Schema wins — acceptance tests validate against it, never against this prose.
 
 A page is reproducible from its manifest entry alone (same commit + template + source +
-seed ⇒ byte-identical output); a third-party tool can consume `(image, GT, manifest)`
-without pinning any other repo in the programme. This is the appropriability contract:
+seed + toolchain ⇒ byte-identical output); a third-party tool can consume
+`(image, GT, manifest)` without pinning any other repo in the programme. This is the appropriability contract:
 corpus *packs* (curated bundles of templates × sources × strata for a given purpose) are
 defined over these triples, not over ad-hoc folders.
 
