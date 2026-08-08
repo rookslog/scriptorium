@@ -107,7 +107,7 @@ One `manifest.json` per batch run; one entry per page. Required fields:
 | `template_id`, `template_version` | which renderer produced the page |
 | `source_text` | source-work identifier + license/provenance tag (public-domain rule) |
 | `degradation` | severity, seed, backend + version, ordered op list *actually applied* |
-| `stratum` | the difficulty band (see the strata definition in the engine packet) |
+| `stratum` | the difficulty band (§2.2) |
 | `toolchain` | TeX engine + version (e.g. tectonic x.y.z), bundle identity/hash, fonts used — byte-identical reproduction is a toolchain property, not just a seed property |
 | `image` | path, format, DPI, `width_px`, `height_px`, sha256 |
 | `page_gt` | path, sha256 |
@@ -123,6 +123,22 @@ seed + toolchain ⇒ byte-identical output); a third-party tool can consume
 `(image, GT, manifest)` without pinning any other repo in the programme. This is the appropriability contract:
 corpus *packs* (curated bundles of templates × sources × strata for a given purpose) are
 defined over these triples, not over ad-hoc folders.
+
+### 2.2 Difficulty strata
+
+Severity is the `DegradationSpec` dial in `[0, 1]`. A corpus is stratified into four bands
+(this section is the normative definition — manifest `stratum` values mean exactly this):
+
+| Stratum | Severity |
+|---|---|
+| A | 0.0 exactly (clean) |
+| B | sampled uniformly in [0.15, 0.35) |
+| C | sampled uniformly in [0.35, 0.65) |
+| D | sampled uniformly in [0.65, 0.90] |
+
+Per-page severity and seed are drawn deterministically from the run seed and recorded in
+the manifest. Stratum D is bounded above at 0.90: it must remain degraded *text*, not
+noise.
 
 The walking skeleton (milestone 1) emits the PDF and echoes the validated GT
 (`RenderResult.gt`); raster page-image emission, the manifest, and the render-geometry
