@@ -84,17 +84,65 @@ non-clean spec raises `NotImplementedError` rather than faking scanner physics.
 ```
 output  =  rendered PDF
         +  page images (one raster per page; degraded per the DegradationSpec)
-        +  GT JSON, echoed with render-time additions (notably pixel-space bboxes)
+        +  GT JSON, schema-conformant and unmodified in coordinate space (normalized bboxes)
+        +  render manifest (sidecar): everything only the renderer knows
 ```
 
-The emitted GT is the *input* GT plus what only the renderer knows: the exact pixel/PDF-space
-bounding box each region landed in, the rasterization DPI, and the degradation parameters
-actually applied (echoed from the spec). This closes the loop — the (image, GT) pair is
-aligned because the same process produced both.
+The GT stays strictly `scholar-schema`-conformant — bboxes remain normalized `[0,1]`, as the
+schema's `BBox` validators require. Everything the renderer alone knows travels in a
+**versioned sidecar render manifest**, never grafted onto the GT: pixel-space geometry is
+*derived* (`px = normalized × page dimensions from the manifest`), so no consumer ever needs
+a schema the schema repo doesn't publish. This closes the loop — the `(image, GT, manifest)`
+triple is aligned because the same process produced all three — without forking the contract.
+
+### 2.1 Render-manifest contract (v1, draft)
+
+One `manifest.json` per batch run; one entry per page. Required fields:
+
+| Field | Contents |
+|---|---|
+| `manifest_version` | this contract's version (semver) |
+| `generator_commit` | scriptorium git SHA that produced the run |
+| `schema_version` / `schema_pin` | `scholar-schema` version + exact pin used for validation |
+| `template_id`, `template_version` | which renderer produced the page |
+| `source_text` | source-work identifier + license/provenance tag (public-domain rule) |
+| `degradation` | severity, seed, backend + version, ordered op list *actually applied* |
+| `stratum` | the difficulty band (§2.2) |
+| `toolchain` | TeX engine + version (e.g. tectonic x.y.z), bundle identity/hash, fonts used — byte-identical reproduction is a toolchain property, not just a seed property |
+| `image` | path, format, DPI, `width_px`, `height_px`, sha256 |
+| `page_gt` | path, sha256 |
+| `document_gt` | path, sha256 (when the page belongs to a `DocumentGT` — required for pages exercising document-level semantics: notes, registers, sous rature) |
+
+**Normative form:** this table is the prose mirror of
+[`schemas/render_manifest.schema.json`](../schemas/render_manifest.schema.json) (JSON
+Schema; lands with the geometry-emission milestone). Where the two disagree, the JSON
+Schema wins — acceptance tests validate against it, never against this prose.
+
+A page is reproducible from its manifest entry alone (same commit + template + source +
+seed + toolchain ⇒ byte-identical output); a third-party tool can consume
+`(image, GT, manifest)` without pinning any other repo in the programme. This is the appropriability contract:
+corpus *packs* (curated bundles of templates × sources × strata for a given purpose) are
+defined over these triples, not over ad-hoc folders.
+
+### 2.2 Difficulty strata
+
+Severity is the `DegradationSpec` dial in `[0, 1]`. A corpus is stratified into four bands
+(this section is the normative definition — manifest `stratum` values mean exactly this):
+
+| Stratum | Severity |
+|---|---|
+| A | 0.0 exactly (clean) |
+| B | sampled uniformly in [0.15, 0.35) |
+| C | sampled uniformly in [0.35, 0.65) |
+| D | sampled uniformly in [0.65, 0.90] |
+
+Per-page severity and seed are drawn deterministically from the run seed and recorded in
+the manifest. Stratum D is bounded above at 0.90: it must remain degraded *text*, not
+noise.
 
 The walking skeleton (milestone 1) emits the PDF and echoes the validated GT
-(`RenderResult.gt`); raster page-image emission and render-time bbox extraction land with the
-augraphy integration and a PDF-geometry pass.
+(`RenderResult.gt`); raster page-image emission, the manifest, and the render-geometry
+alignment pass land with the augraphy integration.
 
 ---
 

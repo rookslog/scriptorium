@@ -46,12 +46,14 @@ dependencies = [
 # The git-URL dependency is declared below but COMMENTED OUT so that `uv sync` /
 # `uv lock` succeed today (resolving the extra would fail: "Repository not found").
 #
-# TODO(scholar-schema): once github.com/loganrooks/scholar-schema is published,
-#   1. uncomment the `scholar-schema @ git+...` line below (and pin a tag),
-#   2. then `uv sync --extra schema`,
-#   3. and flip scriptorium.schema_bridge to strict validation by default.
+# PINNED 2026-08-07 (ADR-0002 cascade, agentic-ocr): tag v0.1.0 = CI-green 8610d5e,
+# scholargt v2.0.0. Canonical org is rookslog (older loganrooks refs redirect).
+# Remaining from the original TODO: flipping scriptorium.schema_bridge to strict
+# validation by default is DEFERRED deliberately -- it changes missing-schema
+# behavior and requires deciding whether CI installs this extra; revisit with the
+# engine build packet.
 schema = [
-    # "scholar-schema @ git+https://github.com/loganrooks/scholar-schema.git@v0.1.0",
+    "scholar-schema",
 ]
 dev = [
     "ruff>=0.6",
@@ -75,6 +77,9 @@ artifacts = ["src/scriptorium/templates/*.j2", "src/scriptorium/py.typed"]
 [tool.uv]
 # dev tooling is also exposed as a dependency group for `uv sync`
 default-groups = []
+
+[tool.uv.sources]
+scholar-schema = { git = "https://github.com/rookslog/scholar-schema.git", rev = "v0.1.0" }
 
 [dependency-groups]
 dev = [
